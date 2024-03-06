@@ -1,0 +1,52 @@
+{% extends 'core/base.html' %}
+{% block content %}
+
+<div class="four-column">
+{% for c in "x"|rjust:"4"  %}
+<table class="table table-sm">
+    <tr>
+        <th>Name</th>
+        <th class="text-end">Last update</th>
+    </tr></table>
+  {% endfor %}
+</div>
+<div class="four-column">
+    <table class="table table-sm">
+    {% for phone in page_obj %}
+
+    <tr>
+        <td><a href="{% url 'view' phone.Name %}" class="blackbtn" title="DESCRIPTION">{{ phone.Name }}</a></td>
+        <td class="text-end">{{ phone.Last_x0020_Update|date:"Y-m-d" }}
+          {{ phone.Last_x0020_Update|time:"H:i" }}
+        </td>
+    </tr>
+
+    {% endfor %}
+  </table>
+</div> 
+        
+<nav aria-label="Page navigation example">
+    <ul class="pagination justify-content-center">
+    {% if page_obj.has_previous %}
+    <li class="page-item">
+        <a class="page-link" href="?page=1">&laquo;</a>
+    </li>
+    <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">{{ page_obj.previous_page_number }}</a>
+    </li>
+    {% endif %}
+      <li class="page-item disabled">
+        <a class="page-link" href="#" tabindex="-1">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.</a>
+      </li>
+      
+      {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.next_page_number }}">{{ page_obj.next_page_number }}</a>
+      </li>
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+      </li>
+        {% endif %}
+    </ul>
+  </nav>
+  {% endblock %}

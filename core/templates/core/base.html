@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{% block title %}{% endblock %}</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'core/css/bootstrap.min.css' %}">
+  <script src="{%  static 'core/js/jquery.min.js' %}"></script>
+  <script src="{%  static 'core/js/bootstrap.bundle.min.js' %}"></script>
+  <link rel="shortcut icon" type="image/png" href="{% static 'core/icons/favicon.png' %}"/>
+  
+  <style>.six-column {
+    -webkit-column-count:6;
+    -moz-column-count:6;
+    -o-column-count:6;
+    column-count:6;
+  }
+  .four-column {
+    -webkit-column-count:4;
+    -moz-column-count:4;
+    -o-column-count:4;
+    column-count:4;
+  }
+</style>
+</head>
+<body>
+  {% block content %}
+  {% endblock %}
+</body>
+</html>

@@ -1,0 +1,283 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<script language="JavaScript">
+    function toggle_sellect_all(source) {
+        checkboxes = document.getElementsByName('category');
+        for (var i in checkboxes) checkboxes[i].checked = source.checked;
+        checkboxes = document.getElementsByName('select_team')
+        for (var i in checkboxes) checkboxes[i].checked = false;
+    }
+    function toggle_team(source, categories, team_id) {
+        checkboxes = document.getElementsByName('category');
+        for (var i in checkboxes) checkboxes[i].checked = false;
+        document.getElementById('select_all').checked = false;
+        for (var i in categories) document.getElementById(categories[i]['title']).checked = source.checked;
+        checkboxes = document.getElementsByName('select_team')
+        for (var i in checkboxes) checkboxes[i].checked = false;
+        document.getElementById(team_id).checked = true;
+    }
+    document.onreadystatechange = function() {
+        if (document.readyState !== "complete") {
+            document.querySelector(
+            "#loader").style.visibility = "visible";
+        } else {
+            document.querySelector(
+            "#loader").style.display = "none";
+        }
+    }
+
+</script>
+
+<style>
+    .overlay {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        background-color: rgba(0, 0, 0, 0.3);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    h2 {
+    color: white;
+    text-shadow: 1px 1px 2px black;
+    }
+
+    tr {
+        position: relative;
+    }
+</style>
+
+<form action="#" method="POST">
+    {% csrf_token %}
+    <div class="card" >
+        <div class="card-body">
+            <div class="collapse" id="collapseExample"> 
+            <h5 class="card-title">Categories</h5>    
+            <div class="six-column">
+                {% for category in categories %}
+                <div class="">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="{{ category.title }}" name="category"
+                            value="{{ category.id }}" {% if category.id in selected_categories %}checked{% endif %}>
+                        <label class="form-check-label" for="{{ category.title }}">{{ category.title }}</label><br>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <br>
+            <div class="col-sm-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" onClick="toggle_sellect_all(this)" id="select_all">
+                    <label class="form-check-label" for="select_all">Select/deselect All</label>
+                </div>
+            </div>
+            <br>
+            {% if teams %}
+            <div class="row">
+                {% for team in teams %}
+                <div class="col-sm-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" onClick="toggle_team(this, {{ team.team_categories }}, '{{ team.team_id }}')" name="select_team" id="{{ team.team_id }}">
+                        <label class="form-check-label" for="{{ team.team_id }}">{{ team.team_name }}</label>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <br>
+        </div>
+    <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample">
+    Show/Hide Categories
+  </button>
+  <a class="btn btn-primary" type="button" href="{% url 'index' %}">
+    Go to main page
+  </a>
+
+    </div>
+</div>
+
+    <div class="card">
+        <div class="card-body">
+            <h6 class="card-title">Filters</h6>
+            <div class="row align-items-center">
+                <div class="form-check form-switch col-sm-2">
+                    <input class="form-check-input" type="checkbox" role="switch" id="only_blank" name="only_blank" {% if only_blank %}checked{% endif %} />
+                    <label class="form-check-label" for="only_blank">Only BLANK results</label>
+                </div>
+                <div class="form-check form-switch col-sm-2">
+                    <input class="form-check-input" type="checkbox" role="switch" id="SDF" name="SDF_blank" {% if SDF_blank %}checked{% endif %}/>
+                    <label class="form-check-label" for="SDF">SDF BLANK</label>
+                </div>
+                <div class="form-check form-switch col-sm-2">
+                    <input class="form-check-input" type="checkbox" role="switch" id="tc911" name="tc911" {% if tc911 %}checked{% endif %}/>
+                    <label class="form-check-label" for="tc911">Show 911 TC</label>
+                </div>
+                <div class="form-check form-switch col-sm-2">
+                    <select  name="Variant" class="form-select" aria-label="Variant">
+                        <option value="None">Variant</option>
+                        <option {% if Variant == 'usku_v2' %}selected{% endif %} value="usku_v2">USKU Variant_2</option>
+                        <option {% if Variant == 'usku_v3' %}selected{% endif %} value="usku_v3">USKU Variant_3</option>
+                        <option {% if Variant == 'mr_usku_v2' %}selected{% endif %} value="mr_usku_v2">MR USKU_V2</option>
+                        <option {% if Variant == 'mr_usku_v3' %}selected{% endif %} value="mr_usku_v3">MR USKU_V3</option>
+                      </select>
+                </div>
+                <div class="form-check form-switch col-sm-2">
+                    <select  name="Priority" class="form-select" aria-label="Priority">
+                        <option value="P3">Priority - P3 by default</option>
+                        <option {% if Priority == 'P0' %}selected{% endif %} value="P0">P0</option>
+                        <option {% if Priority == 'P1' %}selected{% endif %} value="P1">P1</option>
+                        <option {% if Priority == 'P2' %}selected{% endif %} value="P2">P2</option>
+                        <option {% if Priority == 'P3' %}selected{% endif %} value="P3">P3</option>
+                      </select>
+                </div>
+                <div class="form-input row col-sm-2">
+                    <div class="col-sm-6">
+                        <label for="refreshTime" class="col-form-label">Refresh time, min</label>  
+                    </div>                    
+                    <div class="col-sm-6">
+                        <input class="form-control" name="refreshTime" id="refreshTime" type="number" min="1" max="120" value="60">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+    <div class="card col-sm-2">
+        <button id="show_project" type="submit" class="btn btn-primary">{{ button }}</button>
+    </div>
+
+</form>
+<div id="loader" class="text-center">
+    <div class="spinner-border" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+<div id="result">
+<div class="row align-items-center">
+    <div>Total TC: {{ total_tc }}</div>
+    <!-- <div>Request Time: {{ total_time }} s</div> -->
+</div>
+</div>
+</div>
+
+
+
+{% if testcases %}
+<table  class="table table-sm">
+    <tr>
+        <th>TC#</th>
+        {% if not SDF_blank %}<th>SDF</th>{% endif %}
+        {% if tc911 %}<th>911</th>{% endif %}
+        <!-- <th>TestGroup</th> -->
+        <th>CategoryName</th>
+        <th>Priority</th>
+        <!-- <th>TestCaseName</th> -->
+        <th>Description</th>
+        <th>Criteria</th>
+        <th>{{ previous_binaty_version }}</th>
+        <th>{{ last_binary_version }}</th>
+    </tr>
+    {% for tc in testcases %}
+    <tr>
+    <!-- <tr {% if tc.issue %}class="table-warning"{% endif %}> -->
+        <td>{{ tc.displayorder }}</td>
+        {% if not SDF_blank %}<td>{{ tc.sdf }}</td>{% endif %}
+        {% if tc911 %}<td>{{ tc.tc911 }}</td>{% endif %}
+        <!-- <td>{{ tc.TestGroup }}</td> -->
+        <td>{{ tc.CategoryName }}</td>
+        <td>{{ tc.Priority }}</td>
+        <!-- <td>{{ tc.TestCaseName }}</td> -->
+        <td>{{ tc.TestDescription }}</td>
+        <td>{{ tc.TestCriteria }}
+            {% if tc.TPComment or tc.CustomerComments %}<button type="button" class="btn comment" data-bs-toggle="modal" data-bs-target="#{{ tc.testcase_int_id }}">
+                💬
+              </button>{% endif %}
+
+              <div class="modal fade" id="{{ tc.testcase_int_id }}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title" id="exampleModalLabel">Comments</h5>
+                      <!-- <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                      </button> -->
+                    </div>
+                    <div class="modal-body">
+                        {% if tc.TPComment %}
+                        TP Comment: {{ tc.TPComment }}
+                        {% endif %}
+                        {% if tc.TPComment and tc.CustomerComments %}
+                        <br>
+                        {% endif %}
+                        {% if tc.CustomerComments %}
+                        Comments for Carrier: {{ tc.CustomerComments }}
+                        {% endif %}
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+        <td class="{% if tc.PreviousVersionResult == 'Pass' %}table-success
+        {% elif tc.PreviousVersionResult == 'Block' %}table-warning
+        {% elif tc.PreviousVersionResult == 'NS' %}table-secondary
+        {% elif tc.PreviousVersionResult == 'NIS' %}table-warning
+        {% elif tc.PreviousVersionResult == 'Fail' %}table-danger{% endif %}">
+        {{ tc.PreviousVersionResult }}</td>
+        <td class="{% if tc.LastVersionResult == 'Pass' %}table-success
+        {% elif tc.LastVersionResult == 'Block' %}table-warning
+        {% elif tc.LastVersionResult == 'NS' %}table-secondary
+        {% elif tc.LastVersionResult == 'NIS' %}table-warning
+        {% elif tc.LastVersionResult == 'Fail' %}table-danger{% endif %}">
+        {{ tc.LastVersionResult }}</td>
+        {% if tc.issue %}
+        <td>
+            <div class="overlay">
+              <h2>{{ tc.issue }}</h2>
+            </div>
+          </td>
+        {% endif %}
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+</div>
+
+{% if request.method == "POST" %}
+<script>
+    
+    if (!sessionStorage.getItem("refreshTime")) {
+            sessionStorage.setItem("refreshTime", $('#refreshTime').val())
+        } else {
+            document.getElementById('refreshTime').value = sessionStorage.getItem("refreshTime");        
+        };
+
+    function reloadP() {
+        document.location.reload();
+    }
+
+    refreshPageByTimer = setInterval(reloadP, sessionStorage.getItem("refreshTime") * 60000);
+
+    document.getElementById('refreshTime').onchange = function() {
+        sessionStorage.setItem("refreshTime", $('#refreshTime').val())
+        clearInterval(window.refreshPageByTimer);
+        refreshPageByTimer = setInterval(reloadP, sessionStorage.getItem("refreshTime") * 60000);
+    };
+
+</script>
+{% else %}
+<script>
+    document.getElementById('refreshTime').onchange = function() {
+        sessionStorage.setItem("refreshTime", $('#refreshTime').val())
+    };
+</script>
+{% endif %}
+
+
+
+{% endblock %}
