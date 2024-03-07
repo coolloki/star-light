@@ -5,7 +5,7 @@ import base64
 import zlib
 from datetime import timedelta
 from django.utils.dateparse import parse_datetime
-from lxml import etree as ET
+from lxml import etree
 from timeit import default_timer as timer
 
 env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
@@ -48,10 +48,7 @@ class Star:
                                  data=soap_request_body,
                                  headers=cls.HEADERS_GETDEVICES)
 
-
-        xml_parser = ET.XMLParser(recover=True, ns_clean=True, remove_blank_text=True)
-        etree_projects = ET.fromstring(response.content, parser=xml_parser)
-
+        etree_projects = cls.__parse_xml(response.content)
         tables_of_projects = etree_projects.xpath('//Table')
         
         projetcs_list = []
@@ -91,7 +88,6 @@ class Star:
 
         seconds = timer() - timer_start
         print(f'The project {device_model} has been downloaded in {int(seconds)} seconds.')
-        timer_start = timer()
 
         return response.content
 
@@ -103,3 +99,10 @@ class Star:
             16 + zlib.MAX_WBITS).decode('utf-8')
 
         return decompressed_string
+    
+    def __parse_xml(xml) -> etree._Element:
+        """Parses xml to etree element"""
+
+        xml_parser = etree.XMLParser(recover=True, ns_clean=True, remove_blank_text=True)
+        etree_elm = etree.fromstring(xml, parser=xml_parser)
+        return etree_elm
