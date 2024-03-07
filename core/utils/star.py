@@ -1,6 +1,8 @@
 import json
 import requests
 import os
+import base64
+import zlib
 from datetime import timedelta
 from django.utils.dateparse import parse_datetime
 from lxml import etree as ET
@@ -91,4 +93,13 @@ class Star:
         print(f'The project {device_model} has been downloaded in {int(seconds)} seconds.')
         timer_start = timer()
 
-        return response.content   
+        return response.content
+
+    def __decompress_gzip_string(compressed_data: str) -> str:
+        """Decompresses a gzip string"""
+
+        decompressed_string = zlib.decompress(
+            base64.b64decode(compressed_data),
+            16 + zlib.MAX_WBITS).decode('utf-8')
+
+        return decompressed_string
