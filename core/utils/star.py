@@ -4,6 +4,7 @@ import os
 from datetime import timedelta
 from django.utils.dateparse import parse_datetime
 from lxml import etree as ET
+from timeit import default_timer as timer
 
 env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
 
@@ -17,6 +18,12 @@ class Star:
         'content-type': 'text/xml',
         'User-Agent': env['STAR_USER_AGENT']
     }
+
+    HEADERS_GET_TEST_CASE_RESULT2 = {
+            'content-type': 'text/xml; charset=utf-8',
+            'User-Agent': 'Mozilla/4.0 (compatible; MSIE 6.0; MS Web Services Client Protocol 4.0.30319.42000)',
+            'SOAPAction': env['SOAP_ACTION']
+        }
     SID = env['SID']
 
 
@@ -56,3 +63,28 @@ class Star:
             projetcs_list.append(project)
         
         return projetcs_list
+    
+    @classmethod
+    def get_device_project(cls, device_model) -> bytes:
+        timer_start = timer()
+        soap_request_body = f'<?xml version="1.0" encoding="utf-8"?> \
+            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" \
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">\
+                <soap:Body>\
+                    <GetTestCaseResults2_AVT xmlns="http://tempuri.org/">\
+                        <model>{device_model}</model>\
+                        <checkListName/><priority/>\
+                        <sid>{cls.SID}</sid>\
+                    </GetTestCaseResults2_AVT>\
+                </soap:Body>\
+            </soap:Envelope>'
+
+        response = requests.post(cls.STAR_URL,
+                                 data=soap_request_body,
+                                 headers=cls.HEADERS_GET_TEST_CASE_RESULT2)
+
+        seconds = timer() - timer_start
+        print(f'The project {device_model} has been downloaded in {int(seconds)} seconds.')
+        timer_start = timer()
+
+        return response.content
