@@ -65,7 +65,9 @@ class Star:
         return projetcs_list
     
     @classmethod
-    def get_device_project(cls, device_model) -> bytes:
+    def get_device_project(cls, device_model: str) -> bytes:
+        """Returns a whole project for requested device"""
+
         timer_start = timer()
         soap_request_body = f'<?xml version="1.0" encoding="utf-8"?> \
             <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" \
@@ -87,4 +89,4 @@ class Star:
         print(f'The project {device_model} has been downloaded in {int(seconds)} seconds.')
         timer_start = timer()
 
-        return response.content
+        return response.content   
