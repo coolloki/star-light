@@ -29,6 +29,8 @@ class Star:
 
     @classmethod
     def get_projects(cls) -> list:
+        """Returns list that contains names and updated time for all projects"""
+
         soap_request_body = f'<?xml version="1.0" encoding="utf-8"?>\
             <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"\
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
