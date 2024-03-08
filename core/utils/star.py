@@ -46,8 +46,6 @@ class Star:
         }
     SID = env['SID']
 
-    # CATEGORIES = Category.objects.filter(is_active=True).values('id', 'title')
-
     @classmethod
     def get_projects(cls) -> list:
         """Returns list that contains names and updated time for all projects"""
@@ -142,9 +140,3 @@ class Project:
                 len(el.attrib.get('name')) == 3:
                     list_of_binaries_versions.append(el.attrib.get('name'))
         return list_of_binaries_versions
-
-
-    
-
-
-    
