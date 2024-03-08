@@ -6,5 +6,5 @@ from .views import *
 
 urlpatterns = [
     path('', index, name='index'),
-    path('view/<str:project_name>', view, name='view')
+    path('view/<str:device_name>', view, name='view')
 ]

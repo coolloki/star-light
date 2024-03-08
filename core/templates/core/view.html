@@ -108,10 +108,6 @@
                     <label class="form-check-label" for="only_blank">Only BLANK results</label>
                 </div>
                 <div class="form-check form-switch col-sm-2">
-                    <input class="form-check-input" type="checkbox" role="switch" id="SDF" name="SDF_blank" {% if SDF_blank %}checked{% endif %}/>
-                    <label class="form-check-label" for="SDF">SDF BLANK</label>
-                </div>
-                <div class="form-check form-switch col-sm-2">
                     <input class="form-check-input" type="checkbox" role="switch" id="tc911" name="tc911" {% if tc911 %}checked{% endif %}/>
                     <label class="form-check-label" for="tc911">Show 911 TC</label>
                 </div>
@@ -169,7 +165,6 @@
 <table  class="table table-sm">
     <tr>
         <th>TC#</th>
-        {% if not SDF_blank %}<th>SDF</th>{% endif %}
         {% if tc911 %}<th>911</th>{% endif %}
         <!-- <th>TestGroup</th> -->
         <th>CategoryName</th>
@@ -184,7 +179,6 @@
     <tr>
     <!-- <tr {% if tc.issue %}class="table-warning"{% endif %}> -->
         <td>{{ tc.displayorder }}</td>
-        {% if not SDF_blank %}<td>{{ tc.sdf }}</td>{% endif %}
         {% if tc911 %}<td>{{ tc.tc911 }}</td>{% endif %}
         <!-- <td>{{ tc.TestGroup }}</td> -->
         <td>{{ tc.CategoryName }}</td>
