@@ -8,10 +8,28 @@ from django.utils.dateparse import parse_datetime
 from lxml import etree
 from timeit import default_timer as timer
 
+
 env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
 
 with open(env_file) as file:
     env = json.loads(file.read())
+
+def parse_xml(xml) -> etree._Element:
+    """Parses xml to etree element"""
+
+    xml_parser = etree.XMLParser(recover=True, ns_clean=True, remove_blank_text=True)
+    project_etree_elm = etree.fromstring(xml, parser=xml_parser)
+    return project_etree_elm
+
+
+def decompress_gzip_string(compressed_data: str) -> str:
+    """Decompresses a gzip string"""
+
+    decompressed_string = zlib.decompress(
+        base64.b64decode(compressed_data),
+        16 + zlib.MAX_WBITS).decode('utf-8')
+
+    return decompressed_string
 
 class Star:
 
@@ -28,6 +46,7 @@ class Star:
         }
     SID = env['SID']
 
+    # CATEGORIES = Category.objects.filter(is_active=True).values('id', 'title')
 
     @classmethod
     def get_projects(cls) -> list:
@@ -48,7 +67,7 @@ class Star:
                                  data=soap_request_body,
                                  headers=cls.HEADERS_GETDEVICES)
 
-        etree_projects = cls.__parse_xml(response.content)
+        etree_projects = parse_xml(response.content)
         tables_of_projects = etree_projects.xpath('//Table')
         
         projetcs_list = []
@@ -91,18 +110,41 @@ class Star:
 
         return response.content
 
-    def __decompress_gzip_string(compressed_data: str) -> str:
-        """Decompresses a gzip string"""
+class Project:
 
-        decompressed_string = zlib.decompress(
-            base64.b64decode(compressed_data),
-            16 + zlib.MAX_WBITS).decode('utf-8')
+    def __init__(self, device_model, filter={}):
+        star_instance = Star()
+        self.categories = Star.CATEGORIES
+        raw_project = star_instance.get_device_project(device_model)
+        project_etree = parse_xml(raw_project)
+        self.list_of_binaries = self.__get_list_of_binaries(project_etree)
+        self.current_binary_version = self.list_of_binaries[-1]
+        self.previous_biniry_version = self.list_of_binaries[-2]
 
-        return decompressed_string
+        if 'categories' in filter:
+            categories = [dict['title'] for dict in self.categories if str(
+                dict['id']) in filter['categories']]
+        else:
+            categories = [dict['title'] for dict in self.categories]
+
+        print(categories)
+
+    @staticmethod
+    def __get_list_of_binaries(project_etree: etree._Element) -> list:
+        """Returns list of projects binaries versions"""
+
+        namespace = {"xs": "http://www.w3.org/2001/XMLSchema"}
+        head_of_table = project_etree.xpath('//*[@name="TestCaseResults2"]//xs:element', namespaces=namespace)
+
+        list_of_binaries_versions = []
+        for el in head_of_table:
+            if el.attrib.get('name') not in ('mtp', 'PTN', 'sdf') and \
+                len(el.attrib.get('name')) == 3:
+                    list_of_binaries_versions.append(el.attrib.get('name'))
+        return list_of_binaries_versions
+
+
     
-    def __parse_xml(xml) -> etree._Element:
-        """Parses xml to etree element"""
 
-        xml_parser = etree.XMLParser(recover=True, ns_clean=True, remove_blank_text=True)
-        etree_elm = etree.fromstring(xml, parser=xml_parser)
-        return etree_elm
+
+    
