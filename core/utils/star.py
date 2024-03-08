@@ -7,6 +7,7 @@ from datetime import timedelta
 from django.utils.dateparse import parse_datetime
 from lxml import etree
 from timeit import default_timer as timer
+from core.models import Category
 
 
 env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
@@ -20,7 +21,6 @@ def parse_xml(xml) -> etree._Element:
     xml_parser = etree.XMLParser(recover=True, ns_clean=True, remove_blank_text=True)
     project_etree_elm = etree.fromstring(xml, parser=xml_parser)
     return project_etree_elm
-
 
 def decompress_gzip_string(compressed_data: str) -> str:
     """Decompresses a gzip string"""
@@ -45,6 +45,7 @@ class Star:
             'SOAPAction': env['SOAP_ACTION']
         }
     SID = env['SID']
+    ALL_ACTIVE_CATEGORIES = list(Category.objects.filter(is_active=True).values('id', 'title'))
 
     @classmethod
     def get_projects(cls) -> list:
@@ -110,29 +111,106 @@ class Star:
 
 class Project:
 
-    def __init__(self, device_model, filter={}):
+    NECESSARY_TC_ITEMS = (
+            'displayorder',
+            'TestDescription',
+            'TestCriteria',
+            'TestCaseName',
+            'CategoryName',
+            'Priority',
+            'usku_v2',
+            'usku_v3',
+            'mr_usku_v2',
+            'mr_usku_v3',
+            'tc911',
+            'CustomerComments',
+            'TPComment',
+            'MELDefectType',
+            'IsStep')
+
+    def __init__(self, device_model, filters={}):
+        
         star_instance = Star()
-        self.categories = Star.CATEGORIES
         raw_project = star_instance.get_device_project(device_model)
-        project_etree = parse_xml(raw_project)
-        self.list_of_binaries = self.__get_list_of_binaries(project_etree)
+        timer_start = timer()
+
+        if 'categories' in filters:
+            categories = [dict['title'] for dict in star_instance.ALL_ACTIVE_CATEGORIES if str(
+                dict['id']) in filters['categories']]
+        else:
+            categories = [dict['title'] for dict in star_instance.ALL_ACTIVE_CATEGORIES]
+
+        self.project_etree = parse_xml(raw_project)
+
+        self.list_of_binaries = self.__get_list_of_binaries(self.project_etree)
         self.current_binary_version = self.list_of_binaries[-1]
         self.previous_biniry_version = self.list_of_binaries[-2]
+        self.__remove_testcases_which_not_belong_to_categories(self.project_etree, categories)
+        raw_list_of_tc = self.__get_raw_list_of_test_case(self.project_etree, filters={})
+       
+        list_of_tc = []
+        testcase_int_id = 1
 
-        if 'categories' in filter:
-            categories = [dict['title'] for dict in self.categories if str(
-                dict['id']) in filter['categories']]
-        else:
-            categories = [dict['title'] for dict in self.categories]
+        for tc in raw_list_of_tc:
 
-        print(categories)
+            test_case = {}
+            for el in tc:
+                if el.tag == self.current_binary_version:
+                    test_case['LastVersionResult'] = el.text
+                elif el.tag == self.previous_biniry_version:
+                    test_case['PreviousVersionResult'] = el.text
+                if el.tag in self.NECESSARY_TC_ITEMS and el.text != None:
+                    test_case[el.tag] = el.text
+            test_case['incude'] = True
 
-    @staticmethod
-    def __get_list_of_binaries(project_etree: etree._Element) -> list:
+            if filters['Priority'] == 'P0' and test_case['Priority'] != 'P0':
+                test_case['incude'] = False
+            elif filters['Priority'] == 'P1' and test_case['Priority'] not in ('P0', 'P1'):
+                test_case['incude'] = False
+            elif filters['Priority'] == 'P2' and test_case['Priority'] not in ('P0', 'P1', 'P2'):
+                test_case['incude'] = False
+
+            if 'Variant' in filters and filters['Variant'] not in test_case:
+                test_case['incude'] = False
+
+            if 'tc911' not in filters and 'tc911' in test_case:
+                test_case['incude'] = False
+
+            if test_case.get('LastVersionResult') in ('Fail', 'NS', 'Block', 'NT') \
+                and 'CustomerComments' not in test_case:
+                test_case['issue'] = 'Missing Comment'
+            elif test_case.get('LastVersionResult') == 'Fail' and 'MELDefectType' not in test_case:
+                test_case['issue'] = 'Missing DefectType'
+
+            elif 'only_blank' in filters and 'LastVersionResult' in test_case and 'issue' not in test_case:
+                test_case['incude'] = False
+
+            if test_case['incude'] == True:
+                test_case['testcase_int_id'] = 'testcase_int_id-' + \
+                    str(testcase_int_id)
+                testcase_int_id += 1
+                list_of_tc.append(test_case)
+
+        sorted_list_by_tc = sorted(
+            list_of_tc, key=lambda d: d['displayorder'])
+
+
+        self.sorted_list_of_tc_by_category = sorted(
+            sorted_list_by_tc, key=lambda d: d['CategoryName'])
+
+        
+        self.seconds = timer() - timer_start
+        print(f'The response for {device_model} has been parsed and data has been processed in {self.seconds} seconds.')
+
+        print('_' * 15)
+
+ 
+    @classmethod
+    def __get_list_of_binaries(cls, project_etree: etree._Element) -> list:
         """Returns list of projects binaries versions"""
 
         namespace = {"xs": "http://www.w3.org/2001/XMLSchema"}
-        head_of_table = project_etree.xpath('//*[@name="TestCaseResults2"]//xs:element', namespaces=namespace)
+        head_of_table = project_etree.xpath('(//xs:sequence)[1]/xs:element', namespaces=namespace)
 
         list_of_binaries_versions = []
         for el in head_of_table:
@@ -140,3 +218,22 @@ class Project:
                 len(el.attrib.get('name')) == 3:
                     list_of_binaries_versions.append(el.attrib.get('name'))
         return list_of_binaries_versions
+    
+    @classmethod
+    def __remove_testcases_which_not_belong_to_categories(cls, project_etree: etree._Element, categories: list):
+        test_groups = project_etree.xpath('//CategoryName')
+        for group in test_groups:
+            if group.text not in categories:
+                group.getparent().getparent().remove(group.getparent())
+
+    @classmethod
+    def __get_raw_list_of_test_case(cls, project_etree: etree._Element, filters={}) -> list:
+        """Returns list of etree element with test cases"""
+
+        namespace = {"diffgr": "urn:schemas-microsoft-com:xml-diffgram-v1"}
+        if 'only_blank' in filters:
+            list_of_tc = project_etree.xpath(f'//TestCaseResults2[@diffgr:hasChanges="modified" and ( not(descendant::{cls.current_binary_version}) or (descendant::{cls.current_binary_version} and descendant::{cls.current_binary_version}[text()]) )]', namespaces=namespace)
+        else:
+            list_of_tc = project_etree.xpath('//TestCaseResults2[@diffgr:hasChanges="modified"]', namespaces=namespace)
+        
+        return list_of_tc
