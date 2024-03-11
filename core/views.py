@@ -65,7 +65,7 @@ def view(request, device_name):
             'last_binary_version': whole_project.current_binary_version,
             'previous_binaty_version': whole_project.previous_biniry_version,
             'total_tc': len(whole_project.sorted_list_of_tc_by_category),
-            'total_time': whole_project.seconds
+            'total_time': whole_project.parse_time
         }
         context['selected_categories'] = list(map(int, categories))
         for item in project:

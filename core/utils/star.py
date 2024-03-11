@@ -104,8 +104,9 @@ class Star:
                                  data=soap_request_body,
                                  headers=cls.HEADERS_GET_TEST_CASE_RESULT2)
 
-        seconds = timer() - timer_start
-        print(f'The project {device_model} has been downloaded in {int(seconds)} seconds.')
+        download_time = "{:.2f}".format(timer() - timer_start)
+
+        print(f'The project {device_model} has been downloaded in {download_time} seconds.')
 
         return response.content
 
@@ -199,8 +200,10 @@ class Project:
             sorted_list_by_tc, key=lambda d: d['CategoryName'])
 
         
-        self.seconds = timer() - timer_start
-        print(f'The response for {device_model} has been parsed and data has been processed in {self.seconds} seconds.')
+        # parse_time = timer() - timer_start
+        self.parse_time = "{:.2f}".format(timer() - timer_start)
+
+        print(f'The response for {device_model} has been parsed and data has been processed in {self.parse_time} seconds.')
 
         print('_' * 15)
 
