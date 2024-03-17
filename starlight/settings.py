@@ -25,15 +25,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-!=t(^^9&9ed6d%6scck^t7gx(+f%ced^h7*icrhhcpy3f-0-80'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1']
 
 env_file = os.path.join(BASE_DIR, '.env')
 
 with open(env_file) as file:
     ENV = json.loads(file.read())
 
+REMOTE_DATABASE = ENV['REMOTE_DATABASE']
 
 # Application definition
 
@@ -82,9 +83,13 @@ WSGI_APPLICATION = 'starlight.wsgi.application'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'default' : {
+            'ENGINE' : 'django.db.backends.postgresql',
+            'NAME' : 'postgres',
+            'HOST' : REMOTE_DATABASE['HOST'],
+            'PASSWORD': REMOTE_DATABASE['PASSWORD'],
+            'PORT': 5432,
+            'USER': REMOTE_DATABASE['USER'],
     }
 }
 
@@ -129,3 +134,47 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{'
+        },
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d}'
+                '{thread:d} {message}',
+            'style': '{'
+        }
+    },
+    'filters': {
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        }
+    },
+    'handlers': {
+        'console': {
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        }
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False
+        },
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        }
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    }
+}

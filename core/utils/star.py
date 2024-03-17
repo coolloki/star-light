@@ -27,18 +27,20 @@ def decompress_gzip_string(compressed_data: str) -> str:
 
 class Star:
 
-    STAR_URL = settings.ENV['STAR_URL']
+    STAR = settings.ENV['STAR']
+
+    STAR_URL = STAR['STAR_URL']
     HEADERS_GETDEVICES = {
         'content-type': 'text/xml',
-        'User-Agent': settings.ENV['STAR_USER_AGENT']
+        'User-Agent': STAR['STAR_USER_AGENT']
     }
 
     HEADERS_GET_TEST_CASE_RESULT2 = {
             'content-type': 'text/xml; charset=utf-8',
             'User-Agent': 'Mozilla/4.0 (compatible; MSIE 6.0; MS Web Services Client Protocol 4.0.30319.42000)',
-            'SOAPAction': settings.ENV['SOAP_ACTION']
+            'SOAPAction': STAR['SOAP_ACTION']
         }
-    SID = settings.ENV['SID']
+    SID = STAR['SID']
     ALL_ACTIVE_CATEGORIES = list(Category.objects.filter(is_active=True).values('id', 'title'))
 
     @classmethod
