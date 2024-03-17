@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import os
+import json
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -26,6 +28,11 @@ SECRET_KEY = 'django-insecure-!=t(^^9&9ed6d%6scck^t7gx(+f%ced^h7*icrhhcpy3f-0-80
 DEBUG = True
 
 ALLOWED_HOSTS = []
+
+env_file = os.path.join(BASE_DIR, '.env')
+
+with open(env_file) as file:
+    ENV = json.loads(file.read())
 
 
 # Application definition

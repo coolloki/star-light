@@ -1,19 +1,13 @@
-import json
 import requests
-import os
 import base64
 import zlib
+from django.conf import settings
 from datetime import timedelta
 from django.utils.dateparse import parse_datetime
 from lxml import etree
 from timeit import default_timer as timer
 from core.models import Category
 
-
-env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
-
-with open(env_file) as file:
-    env = json.loads(file.read())
 
 def parse_xml(xml) -> etree._Element:
     """Parses xml to etree element"""
@@ -33,18 +27,18 @@ def decompress_gzip_string(compressed_data: str) -> str:
 
 class Star:
 
-    STAR_URL = env['STAR_URL']
+    STAR_URL = settings.ENV['STAR_URL']
     HEADERS_GETDEVICES = {
         'content-type': 'text/xml',
-        'User-Agent': env['STAR_USER_AGENT']
+        'User-Agent': settings.ENV['STAR_USER_AGENT']
     }
 
     HEADERS_GET_TEST_CASE_RESULT2 = {
             'content-type': 'text/xml; charset=utf-8',
             'User-Agent': 'Mozilla/4.0 (compatible; MSIE 6.0; MS Web Services Client Protocol 4.0.30319.42000)',
-            'SOAPAction': env['SOAP_ACTION']
+            'SOAPAction': settings.ENV['SOAP_ACTION']
         }
-    SID = env['SID']
+    SID = settings.ENV['SID']
     ALL_ACTIVE_CATEGORIES = list(Category.objects.filter(is_active=True).values('id', 'title'))
 
     @classmethod
