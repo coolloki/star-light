@@ -1,6 +1,5 @@
 from starlight.settings import *
 
-DEBUG = True
 
 DATABASES = {
     'default': {
